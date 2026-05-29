@@ -1,0 +1,23 @@
+services:
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: purchase_requests_database
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-purchase_requests}
+      POSTGRES_USER: ${DB_USER:-purchase_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-purchase_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - purchase_requests_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-purchase_user} -d ${DB_NAME:-purchase_requests}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  purchase_requests_data:

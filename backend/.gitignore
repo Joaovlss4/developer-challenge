@@ -1,0 +1,29 @@
+# Environment files
+.env
+!.env.example
+
+# Maven build output
+target/
+
+# Logs
+*.log
+logs/
+
+# Java runtime dumps
+hs_err_pid*
+replay_pid*
+
+# IDE and editor files
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker local overrides
+docker-compose.override.yml
