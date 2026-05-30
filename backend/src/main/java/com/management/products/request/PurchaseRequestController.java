@@ -1,5 +1,6 @@
 package com.management.products.request;
 
+import com.management.products.api.ApiSuccessResponse;
 import com.management.products.auth.AuthUserDetails;
 import com.management.products.request.dto.CreatePurchaseRequestRequest;
 import com.management.products.request.dto.PageResponse;
@@ -46,70 +47,70 @@ public class PurchaseRequestController {
 	@ResponseStatus(HttpStatus.CREATED)
 	@PreAuthorize("hasAuthority(T(com.management.products.security.UserPermission).REQUEST_CREATE.authority())")
 	@Operation(summary = "Create a purchase request")
-	public PurchaseRequestResponse createRequest(
+	public ApiSuccessResponse<PurchaseRequestResponse> createRequest(
 		@Valid @RequestBody CreatePurchaseRequestRequest request,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return purchaseRequestService.createRequest(request, currentUser);
+		return ApiSuccessResponse.of(purchaseRequestService.createRequest(request, currentUser));
 	}
 
 	@GetMapping
 	@Operation(summary = "List purchase requests with optional status filter and pagination")
-	public PageResponse<PurchaseRequestSummaryResponse> listRequests(
+	public ApiSuccessResponse<PageResponse<PurchaseRequestSummaryResponse>> listRequests(
 		@Parameter(description = "Optional request status filter")
 		@RequestParam(required = false) PurchaseRequestStatus status,
 		@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return purchaseRequestService.listRequests(status, pageable, currentUser);
+		return ApiSuccessResponse.of(purchaseRequestService.listRequests(status, pageable, currentUser));
 	}
 
 	@GetMapping("/{id}")
 	@Operation(summary = "Get purchase request details by id")
-	public PurchaseRequestResponse getRequestById(
+	public ApiSuccessResponse<PurchaseRequestResponse> getRequestById(
 		@PathVariable Long id,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return purchaseRequestService.getRequestById(id, currentUser);
+		return ApiSuccessResponse.of(purchaseRequestService.getRequestById(id, currentUser));
 	}
 
 	@PatchMapping("/{id}/cancel")
 	@Operation(summary = "Cancel a purchase request")
-	public PurchaseRequestResponse cancelRequest(
+	public ApiSuccessResponse<PurchaseRequestResponse> cancelRequest(
 		@PathVariable Long id,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return purchaseRequestService.cancelRequest(id, currentUser);
+		return ApiSuccessResponse.of(purchaseRequestService.cancelRequest(id, currentUser));
 	}
 
 	@PatchMapping("/{id}/approve")
 	@PreAuthorize("hasAuthority(T(com.management.products.security.UserPermission).REQUEST_REVIEW.authority())")
 	@Operation(summary = "Approve a purchase request")
-	public PurchaseRequestResponse approveRequest(
+	public ApiSuccessResponse<PurchaseRequestResponse> approveRequest(
 		@PathVariable Long id,
 		@Valid @RequestBody(required = false) RequestDecisionRequest request,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return purchaseRequestService.approveRequest(id, request, currentUser);
+		return ApiSuccessResponse.of(purchaseRequestService.approveRequest(id, request, currentUser));
 	}
 
 	@PatchMapping("/{id}/reject")
 	@PreAuthorize("hasAuthority(T(com.management.products.security.UserPermission).REQUEST_REVIEW.authority())")
 	@Operation(summary = "Reject a purchase request")
-	public PurchaseRequestResponse rejectRequest(
+	public ApiSuccessResponse<PurchaseRequestResponse> rejectRequest(
 		@PathVariable Long id,
 		@Valid @RequestBody(required = false) RequestDecisionRequest request,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return purchaseRequestService.rejectRequest(id, request, currentUser);
+		return ApiSuccessResponse.of(purchaseRequestService.rejectRequest(id, request, currentUser));
 	}
 
 	@GetMapping("/{id}/history")
 	@Operation(summary = "Get purchase request history")
-	public List<RequestHistoryResponse> getRequestHistory(
+	public ApiSuccessResponse<List<RequestHistoryResponse>> getRequestHistory(
 		@PathVariable Long id,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return purchaseRequestService.getRequestHistory(id, currentUser);
+		return ApiSuccessResponse.of(purchaseRequestService.getRequestHistory(id, currentUser));
 	}
 }
