@@ -1,5 +1,5 @@
 CREATE TYPE user_role AS ENUM ('SOLICITANTE', 'APROVADOR', 'ADMIN');
-CREATE TYPE approval_level AS ENUM ('LEVEL_1', 'LEVEL_2', 'LEVEL_3');
+CREATE TYPE approval_level AS ENUM ('LEVEL_0', 'LEVEL_1', 'LEVEL_2', 'LEVEL_3');
 CREATE TYPE request_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED');
 CREATE TYPE request_action AS ENUM ('CREATED', 'APPROVED', 'REJECTED', 'CANCELLED');
 
@@ -9,11 +9,11 @@ CREATE TABLE users (
     email VARCHAR(160) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role user_role NOT NULL,
-    approval_level approval_level,
+    approval_level approval_level NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_users_role_approval_level CHECK (
-        (role = 'SOLICITANTE' AND approval_level IS NULL)
+        (role = 'SOLICITANTE' AND approval_level = 'LEVEL_0')
         OR (role = 'APROVADOR' AND approval_level IN ('LEVEL_1', 'LEVEL_2'))
         OR (role = 'ADMIN' AND approval_level = 'LEVEL_3')
     )
