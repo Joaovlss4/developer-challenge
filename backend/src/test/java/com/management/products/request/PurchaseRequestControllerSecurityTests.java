@@ -135,9 +135,9 @@ class PurchaseRequestControllerSecurityTests {
 					}
 					"""))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.id").value(1L))
-			.andExpect(jsonPath("$.status").value("PENDING"))
-			.andExpect(jsonPath("$.requiredApprovalLevel").value("LEVEL_3"));
+			.andExpect(jsonPath("$.data.id").value(1L))
+			.andExpect(jsonPath("$.data.status").value("PENDING"))
+			.andExpect(jsonPath("$.data.requiredApprovalLevel").value("LEVEL_3"));
 	}
 
 	@ParameterizedTest
@@ -172,9 +172,9 @@ class PurchaseRequestControllerSecurityTests {
 
 		mockMvc.perform(get("/requests"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.content").isArray())
-			.andExpect(jsonPath("$.page").value(0))
-			.andExpect(jsonPath("$.size").value(20));
+			.andExpect(jsonPath("$.data.content").isArray())
+			.andExpect(jsonPath("$.data.page").value(0))
+			.andExpect(jsonPath("$.data.size").value(20));
 	}
 
 	@Test
@@ -190,8 +190,8 @@ class PurchaseRequestControllerSecurityTests {
 				.param("size", "5")
 				.param("sort", "createdAt,desc"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.size").value(5))
-			.andExpect(jsonPath("$.totalElements").value(1));
+			.andExpect(jsonPath("$.data.size").value(5))
+			.andExpect(jsonPath("$.data.totalElements").value(1));
 
 		ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 		verify(purchaseRequestService).listRequests(eq(PurchaseRequestStatus.PENDING), pageableCaptor.capture(), any());
@@ -223,8 +223,8 @@ class PurchaseRequestControllerSecurityTests {
 
 		mockMvc.perform(get("/requests/1"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(1L))
-			.andExpect(jsonPath("$.title").value("New laptops"));
+			.andExpect(jsonPath("$.data.id").value(1L))
+			.andExpect(jsonPath("$.data.title").value("New laptops"));
 	}
 
 	@Test
@@ -267,7 +267,7 @@ class PurchaseRequestControllerSecurityTests {
 
 		mockMvc.perform(patch("/requests/1/cancel").with(csrf()))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("CANCELLED"));
+			.andExpect(jsonPath("$.data.status").value("CANCELLED"));
 	}
 
 	@Test
@@ -334,7 +334,7 @@ class PurchaseRequestControllerSecurityTests {
 					}
 					"""))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("APPROVED"));
+			.andExpect(jsonPath("$.data.status").value("APPROVED"));
 	}
 
 	@Test
@@ -379,7 +379,7 @@ class PurchaseRequestControllerSecurityTests {
 					}
 					"""))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("REJECTED"));
+			.andExpect(jsonPath("$.data.status").value("REJECTED"));
 	}
 
 	@Test
@@ -426,7 +426,7 @@ class PurchaseRequestControllerSecurityTests {
 
 		mockMvc.perform(get("/requests/1/history"))
 			.andExpect(status().isOk())
-			.andExpect(jsonPath("$[0].action").value("CREATED"));
+			.andExpect(jsonPath("$.data[0].action").value("CREATED"));
 	}
 
 	@Test

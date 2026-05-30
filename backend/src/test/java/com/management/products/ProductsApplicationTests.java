@@ -1,13 +1,15 @@
 package com.management.products;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
-@SpringBootTest
+import org.junit.jupiter.api.Test;
+
 class ProductsApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void applicationClassCanBeInstantiated() {
+		assertThatCode(ProductsApplication::new)
+			.doesNotThrowAnyException();
 	}
 
 }

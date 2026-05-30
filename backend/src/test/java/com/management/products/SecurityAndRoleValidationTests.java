@@ -64,8 +64,8 @@ class SecurityAndRoleValidationTests {
 	private AuthenticationManager authenticationManager;
 
 	@Test
-	void usersCreateWithoutAuthenticationReturns401() throws Exception {
-		mockMvc.perform(post("/users")
+	void registerWithoutAuthenticationReturns401() throws Exception {
+		mockMvc.perform(post("/auth/register")
 				.with(csrf())
 				.contentType("application/json")
 				.content("""
@@ -73,7 +73,8 @@ class SecurityAndRoleValidationTests {
 					  "name": "Admin User",
 					  "email": "admin@example.com",
 					  "password": "StrongPass123!",
-					  "role": "ADMIN"
+					  "role": "ADMIN",
+					  "approvalLevel": "LEVEL_3"
 					}
 					"""))
 			.andExpect(status().isUnauthorized());
@@ -81,8 +82,8 @@ class SecurityAndRoleValidationTests {
 
 	@Test
 	@WithMockUser(roles = "SOLICITANTE")
-	void usersCreateWithNonAdminReturns403() throws Exception {
-		mockMvc.perform(post("/users")
+	void registerWithNonAdminReturns403() throws Exception {
+		mockMvc.perform(post("/auth/register")
 				.with(csrf())
 				.contentType("application/json")
 				.content("""
@@ -98,7 +99,8 @@ class SecurityAndRoleValidationTests {
 	}
 
 	@Test
-	void publicRegisterCreatesOnlySolicitante() throws Exception {
+	@WithMockUser(authorities = "user:manage")
+	void adminRegisterCreatesUserWithRequestedRoleAndLevel() throws Exception {
 		when(userRepository.existsByEmail("new.user@example.com")).thenReturn(false);
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
 			User user = invocation.getArgument(0);
@@ -114,23 +116,24 @@ class SecurityAndRoleValidationTests {
 					  "name": "New User",
 					  "email": "new.user@example.com",
 					  "password": "StrongPass123!",
-					  "role": "ADMIN",
-					  "approvalLevel": "LEVEL_3"
+					  "role": "APROVADOR",
+					  "approvalLevel": "LEVEL_2"
 					}
 					"""))
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.user.role").value("SOLICITANTE"))
-			.andExpect(jsonPath("$.user.approvalLevel").value("LEVEL_0"));
+			.andExpect(jsonPath("$.data.user.role").value("APROVADOR"))
+			.andExpect(jsonPath("$.data.user.approvalLevel").value("LEVEL_2"))
+			.andExpect(jsonPath("$.data.token").isString());
 
 		verify(userRepository).existsByEmail("new.user@example.com");
 	}
 
 	@Test
 	@WithMockUser(authorities = "user:manage")
-	void usersCreateRejectsInvalidRoleApprovalLevelCombination() throws Exception {
+	void registerRejectsInvalidRoleApprovalLevelCombination() throws Exception {
 		when(userRepository.existsByEmail("invalid.combo@example.com")).thenReturn(false);
 
-		mockMvc.perform(post("/users")
+		mockMvc.perform(post("/auth/register")
 				.with(csrf())
 				.contentType("application/json")
 				.content("""
