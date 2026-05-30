@@ -1,7 +1,6 @@
 package com.management.products.user;
 
 import com.management.products.auth.dto.UserResponse;
-import com.management.products.user.dto.CreateUserRequest;
 import com.management.products.user.dto.UpdateUserRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -21,23 +20,6 @@ public class UserService {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.userRolePolicy = userRolePolicy;
-	}
-
-	@Transactional
-	public UserResponse createUser(CreateUserRequest request) {
-		String email = normalizeEmail(request.email());
-		validateEmailAvailability(email);
-
-		ApprovalLevel approvalLevel = userRolePolicy.resolveApprovalLevel(request.role(), request.approvalLevel());
-		User user = new User(
-			request.name().trim(),
-			email,
-			passwordEncoder.encode(request.password()),
-			request.role(),
-			approvalLevel
-		);
-
-		return UserResponse.from(saveUser(user));
 	}
 
 	@Transactional

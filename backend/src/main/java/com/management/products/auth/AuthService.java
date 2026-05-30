@@ -47,8 +47,14 @@ public class AuthService {
 		String email = normalizeEmail(request.email());
 		validateEmailAvailability(email);
 
-		ApprovalLevel approvalLevel = userRolePolicy.resolveApprovalLevel(UserRole.SOLICITANTE, null);
-		User user = new User(request.name().trim(), email, passwordEncoder.encode(request.password()), UserRole.SOLICITANTE, approvalLevel);
+		ApprovalLevel approvalLevel = userRolePolicy.resolveApprovalLevel(request.role(), request.approvalLevel());
+		User user = new User(
+			request.name().trim(),
+			email,
+			passwordEncoder.encode(request.password()),
+			request.role(),
+			approvalLevel
+		);
 
 		User savedUser = saveUser(user);
 		AuthUserDetails userDetails = new AuthUserDetails(savedUser);
