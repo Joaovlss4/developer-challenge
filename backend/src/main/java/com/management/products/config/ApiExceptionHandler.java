@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,6 +31,20 @@ public class ApiExceptionHandler {
 		detail.setProperty("path", request.getRequestURI());
 		detail.setProperty("timestamp", OffsetDateTime.now());
 		return ResponseEntity.status(exception.getStatusCode()).body(detail);
+	}
+
+	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+	ResponseEntity<ProblemDetail> handleOptimisticLocking(
+		ObjectOptimisticLockingFailureException exception,
+		HttpServletRequest request
+	) {
+		ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+			HttpStatus.CONFLICT,
+			"The request was changed by another operation. Please refresh and try again."
+		);
+		detail.setProperty("path", request.getRequestURI());
+		detail.setProperty("timestamp", OffsetDateTime.now());
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(detail);
 	}
 
 	private List<String> validationErrors(MethodArgumentNotValidException exception) {

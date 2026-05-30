@@ -4,8 +4,6 @@ public enum UserPermission {
 	PROFILE_READ("profile:read"),
 	USER_MANAGE("user:manage"),
 	REQUEST_CREATE("request:create"),
-	REQUEST_READ_OWN("request:read:own"),
-	REQUEST_CANCEL_OWN("request:cancel:own"),
 	REQUEST_REVIEW("request:review"),
 	REQUEST_APPROVE_LEVEL_1("request:approve:level1"),
 	REQUEST_APPROVE_LEVEL_2("request:approve:level2"),

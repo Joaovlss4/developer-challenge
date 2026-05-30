@@ -30,6 +30,7 @@ CREATE TABLE purchase_requests (
     requester_id BIGINT NOT NULL REFERENCES users(id),
     resolved_by_id BIGINT REFERENCES users(id),
     resolved_at TIMESTAMPTZ,
+    version BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_purchase_requests_amount_positive CHECK (amount > 0),

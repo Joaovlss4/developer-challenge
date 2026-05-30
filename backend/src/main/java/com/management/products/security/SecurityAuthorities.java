@@ -44,25 +44,22 @@ public final class SecurityAuthorities {
 
 	private static void addSolicitanteAuthorities(Set<String> authorities) {
 		authorities.add(UserPermission.REQUEST_CREATE.authority());
-		authorities.add(UserPermission.REQUEST_READ_OWN.authority());
-		authorities.add(UserPermission.REQUEST_CANCEL_OWN.authority());
 	}
 
 	private static void addAprovadorAuthorities(Set<String> authorities, ApprovalLevel approvalLevel) {
+		authorities.add(UserPermission.REQUEST_READ_ALL.authority());
 		authorities.add(UserPermission.REQUEST_REVIEW.authority());
-		authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_1.authority());
-
-		if (approvalLevel == ApprovalLevel.LEVEL_2) {
+		if (approvalLevel == ApprovalLevel.LEVEL_1) {
+			authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_1.authority());
+		} else if (approvalLevel == ApprovalLevel.LEVEL_2) {
+			authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_1.authority());
 			authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_2.authority());
 		}
 	}
 
 	private static void addAdminAuthorities(Set<String> authorities) {
-		addSolicitanteAuthorities(authorities);
 		authorities.add(UserPermission.USER_MANAGE.authority());
 		authorities.add(UserPermission.REQUEST_REVIEW.authority());
-		authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_1.authority());
-		authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_2.authority());
 		authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_3.authority());
 		authorities.add(UserPermission.REQUEST_READ_ALL.authority());
 		authorities.add(UserPermission.REQUEST_CANCEL_ANY.authority());
