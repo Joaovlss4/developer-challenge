@@ -1,5 +1,8 @@
 import { DashboardPageClient } from "@/features/dashboard/components/DashboardPageClient";
+import { requireServerSession } from "@/features/auth/utils/serverSession";
 
-export default function DashboardPage() {
-  return <DashboardPageClient />;
+export default async function DashboardPage() {
+  const session = await requireServerSession();
+
+  return <DashboardPageClient initialSession={session} />;
 }

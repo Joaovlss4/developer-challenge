@@ -4,9 +4,10 @@ import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useStoredSession } from "@/features/auth/hooks/useStoredSession";
+import type { AuthSession } from "@/features/auth/types/auth.types";
 
-export function useAuthenticatedSession() {
-  const sessionState = useStoredSession();
+export function useAuthenticatedSession(initialSession?: AuthSession | null) {
+  const sessionState = useStoredSession(initialSession);
   const router = useRouter();
 
   useEffect(() => {

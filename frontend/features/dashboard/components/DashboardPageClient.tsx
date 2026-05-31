@@ -9,19 +9,25 @@ import {
   useAuthenticatedSession,
 } from "@/features/app-shell/hooks/useAuthenticatedSession";
 import { useDashboardSummary } from "@/features/dashboard/hooks/useDashboardSummary";
+import type { AuthSession } from "@/features/auth/types/auth.types";
 import type { DashboardKpi } from "@/features/requests/types/request.types";
 
-export function DashboardPageClient() {
+export function DashboardPageClient({
+  initialSession,
+}: {
+  initialSession?: AuthSession | null;
+}) {
   const {
     clearSession,
+    dismissLogoutError,
     error: sessionError,
     isAuthenticated,
     isPending,
     retrySession,
+    logoutError,
     session,
     status,
-  } =
-    useAuthenticatedSession();
+  } = useAuthenticatedSession(initialSession);
   const { error, errorStatus, isLoading, kpis } = useDashboardSummary(
     status === "authenticated" && isAuthenticated && session
       ? String(session.user.id)
@@ -50,6 +56,8 @@ export function DashboardPageClient() {
   return (
     <AppShell
       isLoggingOut={isPending}
+      logoutError={logoutError}
+      onDismissLogoutError={dismissLogoutError}
       onLogout={clearSession}
       subtitle="Resumo inicial das solicitações por status para acompanhar o fluxo de compras."
       title="Dashboard"

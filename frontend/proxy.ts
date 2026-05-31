@@ -9,25 +9,20 @@ export function proxy(request: NextRequest) {
   const sessionToken = request.cookies.get(SESSION_COOKIE_KEY)?.value;
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
-  if (!sessionToken) {
-    if (isPublicPath) {
-      return NextResponse.next();
-    }
+  if (isPublicPath) {
+    return NextResponse.next();
+  }
 
+  if (!sessionToken) {
     const loginUrl = new URL("/login", request.url);
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete(SESSION_COOKIE_KEY);
     return response;
   }
 
-  if (pathname === "/login") {
-    const homeUrl = new URL("/", request.url);
-    return NextResponse.redirect(homeUrl);
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/login", "/dashboard/:path*", "/solicitacoes/:path*"],
+  matcher: ["/", "/login", "/dashboard/:path*", "/solicitacoes/:path*", "/usuarios/:path*"],
 };

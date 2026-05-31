@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/runtime-config";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -27,15 +29,12 @@ type ErrorPayload = {
   errors?: Array<{ message?: string }>;
 };
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8080";
-
 function resolveRequestUrl(path: string) {
   if (path.startsWith("/api/")) {
     return path;
   }
 
-  return `${API_BASE_URL}${path}`;
+  return `${getApiBaseUrl()}${path}`;
 }
 
 function getDefaultErrorMessage(status: number) {

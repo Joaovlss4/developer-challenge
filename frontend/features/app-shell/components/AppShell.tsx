@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import {
   Avatar,
+  Backdrop,
   Box,
   Button,
+  CircularProgress,
   Container,
   Divider,
   List,
@@ -12,6 +15,8 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
+  Alert,
+  Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
@@ -23,6 +28,8 @@ import type { AuthenticatedUser } from "@/features/auth/types/auth.types";
 
 type AppShellProps = {
   children: ReactNode;
+  logoutError?: string | null;
+  onDismissLogoutError?: () => void;
   isLoggingOut: boolean;
   onLogout: () => void;
   title: string;
@@ -33,6 +40,8 @@ type AppShellProps = {
 export function AppShell({
   children,
   isLoggingOut,
+  logoutError,
+  onDismissLogoutError,
   onLogout,
   subtitle,
   title,
@@ -40,6 +49,7 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   return (
     <Box
@@ -83,28 +93,32 @@ export function AppShell({
                 </Avatar>
                 <Stack spacing={0.25}>
                   <Typography sx={{ fontWeight: 800 }}>
-                    Solicitações de Compra
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
                     {user.name}
-                  </Typography>
+                  </Typography> 
                 </Stack>
               </Stack>
 
               <Divider />
 
               <List disablePadding sx={{ display: "grid", gap: 1 }}>
-                {appNavigationItems.map((item) => {
-                  const isSelected = pathname === item.href;
-                  const isDisabled =
-                    item.href === "/aprovacoes" || item.href === "/configuracoes";
+                {appNavigationItems
+                  .filter((item) => item.roles.includes(user.role))
+                  .map((item) => {
+                  const isSelected =
+                    item.href === "/"
+                      ? pathname === "/"
+                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
                   return (
                     <ListItemButton
                       key={item.label}
-                      component={isDisabled ? "button" : Link}
-                      href={isDisabled ? undefined : item.href}
-                      disabled={isDisabled}
+                      component={Link}
+                      href={item.href}
+                      onClick={() => {
+                        if (!isSelected) {
+                          setIsNavigating(true);
+                        }
+                      }}
                       selected={isSelected}
                       sx={{
                         borderRadius: 1,
@@ -180,6 +194,38 @@ export function AppShell({
           </Stack>
         </Box>
       </Container>
+
+      <Backdrop
+        open={isNavigating}
+        sx={{
+          color: "#fff",
+          zIndex: (theme) => theme.zIndex.modal + 1,
+          flexDirection: "column",
+          gap: 2,
+          bgcolor: "rgba(29, 23, 62, 0.48)",
+        }}
+      >
+        <CircularProgress color="inherit" />
+        <Typography sx={{ color: "common.white", fontWeight: 700 }}>
+          Abrindo página...
+        </Typography>
+      </Backdrop>
+
+      <Snackbar
+        open={Boolean(logoutError)}
+        autoHideDuration={5000}
+        onClose={onDismissLogoutError}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={onDismissLogoutError}
+          severity="warning"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {logoutError}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
