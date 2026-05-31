@@ -8,17 +8,14 @@ import com.management.products.request.dto.PurchaseRequestResponse;
 import com.management.products.request.dto.PurchaseRequestSummaryResponse;
 import com.management.products.request.dto.RequestDecisionRequest;
 import com.management.products.request.dto.RequestHistoryResponse;
-import com.management.products.security.UserPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,7 +30,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/requests")
-@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Purchase Requests", description = "Purchase request management endpoints")
 public class PurchaseRequestController {
 
@@ -45,7 +41,6 @@ public class PurchaseRequestController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	@PreAuthorize("hasAuthority(T(com.management.products.security.UserPermission).REQUEST_CREATE.authority())")
 	@Operation(summary = "Create a purchase request")
 	public ApiSuccessResponse<PurchaseRequestResponse> createRequest(
 		@Valid @RequestBody CreatePurchaseRequestRequest request,
@@ -84,7 +79,6 @@ public class PurchaseRequestController {
 	}
 
 	@PatchMapping("/{id}/approve")
-	@PreAuthorize("hasAuthority(T(com.management.products.security.UserPermission).REQUEST_REVIEW.authority())")
 	@Operation(summary = "Approve a purchase request")
 	public ApiSuccessResponse<PurchaseRequestResponse> approveRequest(
 		@PathVariable Long id,
@@ -95,7 +89,6 @@ public class PurchaseRequestController {
 	}
 
 	@PatchMapping("/{id}/reject")
-	@PreAuthorize("hasAuthority(T(com.management.products.security.UserPermission).REQUEST_REVIEW.authority())")
 	@Operation(summary = "Reject a purchase request")
 	public ApiSuccessResponse<PurchaseRequestResponse> rejectRequest(
 		@PathVariable Long id,

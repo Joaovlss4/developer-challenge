@@ -1,6 +1,7 @@
 package com.management.products.config;
 
 import com.management.products.auth.JwtAuthenticationFilter;
+import com.management.products.security.UserPermission;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +14,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -27,7 +27,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity
 public class SecurityConfig {
 
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -60,12 +59,18 @@ public class SecurityConfig {
 					response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied")
 				)
 			)
-			.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-				.requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-				.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
-				.anyRequest().authenticated()
-			)
+				.authorizeHttpRequests(authorize -> authorize
+					.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+					.requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+					.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
+					.requestMatchers(HttpMethod.POST, "/auth/register").hasAuthority(UserPermission.USER_MANAGE.authority())
+					.requestMatchers(HttpMethod.GET, "/users").hasAuthority(UserPermission.USER_MANAGE.authority())
+					.requestMatchers(HttpMethod.PATCH, "/users/*").hasAuthority(UserPermission.USER_MANAGE.authority())
+					.requestMatchers(HttpMethod.POST, "/requests").hasAuthority(UserPermission.REQUEST_CREATE.authority())
+					.requestMatchers(HttpMethod.PATCH, "/requests/*/approve").hasAuthority(UserPermission.REQUEST_REVIEW.authority())
+					.requestMatchers(HttpMethod.PATCH, "/requests/*/reject").hasAuthority(UserPermission.REQUEST_REVIEW.authority())
+					.anyRequest().authenticated()
+				)
 			.authenticationProvider(authenticationProvider())
 			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
