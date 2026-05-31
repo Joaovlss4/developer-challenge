@@ -1,8 +1,13 @@
 import { apiRequest } from "@/lib/api";
 import type {
+  CreatePurchaseRequestPayload,
   DashboardKpi,
   PageResponse,
   PurchaseRequestPageResponse,
+  PurchaseRequestDetails,
+  RequestHistoryEntry,
+  RequestHistoryResponse,
+  PurchaseRequestResponse,
   PurchaseRequestSummary,
   RequestSortDirection,
   RequestSortField,
@@ -80,6 +85,66 @@ export const requestService = {
         method: "GET",
         cache: "no-store",
         signal,
+      },
+    );
+
+    return response.data;
+  },
+  async createRequest(payload: CreatePurchaseRequestPayload) {
+    const response = await apiRequest<PurchaseRequestResponse>("/api/requests", {
+      method: "POST",
+      body: payload,
+    });
+
+    return response.data;
+  },
+  async getRequestById(id: number) {
+    const response = await apiRequest<PurchaseRequestResponse>(`/api/requests/${id}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    return response.data;
+  },
+  async getRequestHistory(id: number): Promise<RequestHistoryEntry[]> {
+    const response = await apiRequest<RequestHistoryResponse>(
+      `/api/requests/${id}/history`,
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    );
+
+    return [...response.data].sort(
+      (left, right) =>
+        new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+    );
+  },
+  async cancelRequest(id: number): Promise<PurchaseRequestDetails> {
+    const response = await apiRequest<PurchaseRequestResponse>(
+      `/api/requests/${id}/cancel`,
+      {
+        method: "PATCH",
+      },
+    );
+
+    return response.data;
+  },
+  async approveRequest(id: number): Promise<PurchaseRequestDetails> {
+    const response = await apiRequest<PurchaseRequestResponse>(
+      `/api/requests/${id}/approve`,
+      {
+        method: "PATCH",
+      },
+    );
+
+    return response.data;
+  },
+  async rejectRequest(id: number): Promise<PurchaseRequestDetails> {
+    const response = await apiRequest<PurchaseRequestResponse>(
+      `/api/requests/${id}/reject`,
+      {
+        method: "PATCH",
       },
     );
 

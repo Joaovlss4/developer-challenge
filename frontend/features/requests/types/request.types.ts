@@ -22,6 +22,50 @@ export interface PurchaseRequestSummary {
   createdAt: string;
 }
 
+export interface RequestActor {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface PurchaseRequestDetails {
+  id: number;
+  title: string;
+  description: string;
+  amount: number;
+  category: string;
+  status: PurchaseRequestStatus;
+  requiredApprovalLevel: ApprovalLevel;
+  requester: RequestActor;
+  resolvedBy: RequestActor | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePurchaseRequestPayload {
+  title: string;
+  description: string;
+  amount: number;
+  category: string;
+}
+
+export type RequestAction =
+  | "CREATED"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
+
+export interface RequestHistoryEntry {
+  id: number;
+  action: RequestAction;
+  fromStatus: PurchaseRequestStatus | null;
+  toStatus: PurchaseRequestStatus | null;
+  comment: string | null;
+  actor: RequestActor;
+  createdAt: string;
+}
+
 export interface PageResponse<T> {
   content: T[];
   page: number;
@@ -35,6 +79,12 @@ export interface PageResponse<T> {
 export type PurchaseRequestPageResponse = ApiSuccessResponse<
   PageResponse<PurchaseRequestSummary>
 >;
+
+export type PurchaseRequestResponse =
+  ApiSuccessResponse<PurchaseRequestDetails>;
+
+export type RequestHistoryResponse =
+  ApiSuccessResponse<RequestHistoryEntry[]>;
 
 export interface DashboardKpi {
   label: string;
