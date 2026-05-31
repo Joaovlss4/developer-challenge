@@ -1,17 +1,20 @@
 # Purchase Request Management API
 
-Spring Boot backend for the Kingspan technical challenge. This service manages users, purchase requests, approval workflow, request history, JWT authentication, and RBAC-based authorization.
+Spring Boot backend for the Kingspan technical challenge. This service manages users, purchase requests, approval workflow, request history, JWT authentication, RBAC-based authorization, and demo seed data for local evaluation.
+
+This README is aligned with the challenge requirements from the repository root `README.md` and with the backend implementation that exists today.
 
 ## Overview
 
 The backend provides:
 
 - JWT authentication
-- Administrative user provisioning
-- Purchase request creation, listing, detail, cancellation, approval, rejection, and history
-- Approval routing based on request amount
-- Standardized validation and business error handling
-- Automated tests for service, controller, security, and repository behavior
+- administrative user provisioning
+- purchase request creation, listing, detail, cancellation, approval, rejection, and history
+- approval routing based on request amount
+- standardized success and error responses
+- demo seeds for users, requests, and request history
+- automated tests for service, controller, security, and repository behavior
 
 ## Tech Stack
 
@@ -42,6 +45,14 @@ The backend provides:
   - cancels any pending request
   - approves or rejects requests of any level
 
+### Approval level by amount
+
+| Amount | Required approval level |
+| --- | --- |
+| `<= 1000.00` | `LEVEL_1` |
+| `1000.01` to `10000.00` | `LEVEL_2` |
+| `> 10000.00` | `LEVEL_3` |
+
 ### Valid state transitions
 
 | Current status | Action | Allowed by |
@@ -61,7 +72,9 @@ Invalid transitions return `422 Unprocessable Entity` with a descriptive message
 backend/
 ├── database/
 │   ├── Dockerfile
-│   └── init/01_schema.sql
+│   └── init/
+│       ├── 01_schema.sql
+│       └── 02_seed.sql
 ├── src/
 │   ├── main/java/com/management/products/
 │   │   ├── api/
@@ -132,34 +145,26 @@ Open a SQL shell if needed:
 docker compose exec database psql -U purchase_user -d purchase_requests
 ```
 
-### 2. Bootstrap the first admin user
+### 2. Load schema and demo seeds
 
-Important: in the current implementation, `POST /auth/register` is **admin-only**.  
-That means a fresh database has no public registration flow. You must create the first `ADMIN` manually.
+The PostgreSQL container automatically loads every SQL script from:
 
-Generate a BCrypt password hash with Docker:
-
-```bash
-docker run --rm httpd:2.4-alpine htpasswd -nbBC 10 "" "Admin@123" | tr -d ':\n'
+```text
+backend/database/init/
 ```
 
-Use the generated hash in this SQL:
+The backend ships with:
 
-```sql
-INSERT INTO users (name, email, password_hash, role, approval_level)
-VALUES (
-  'Initial Admin',
-  'admin@example.com',
-  '<PASTE_BCRYPT_HASH_HERE>',
-  'ADMIN',
-  'LEVEL_3'
-);
-```
+- `01_schema.sql` for schema creation
+- `02_seed.sql` for demo users, requests, and request history
 
-You can run it with:
+These scripts run only when the PostgreSQL volume is initialized for the first time.
+
+If your volume already exists and you want to recreate the database with fresh schema and seeds, run:
 
 ```bash
-docker compose exec database psql -U purchase_user -d purchase_requests
+docker compose down -v
+docker compose up -d --build
 ```
 
 ### 3. Start the backend
@@ -173,6 +178,341 @@ Application URLs:
 - API: [http://localhost:8080](http://localhost:8080)
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+## Seeded Demo Data
+
+### Shared password
+
+All seeded users share the same password:
+
+```text
+Password@123
+```
+
+### Seeded users
+
+| Role | Email | Approval level |
+| --- | --- | --- |
+| `ADMIN` | `admin@example.com` | `LEVEL_3` |
+| `APROVADOR` | `approver1@example.com` | `LEVEL_1` |
+| `APROVADOR` | `approver2@example.com` | `LEVEL_2` |
+| `SOLICITANTE` | `requester@example.com` | `LEVEL_0` |
+| `SOLICITANTE` | `requester2@example.com` | `LEVEL_0` |
+
+### Seeded purchase requests
+
+The seed file also creates requests in different statuses so you can test the workflow immediately:
+
+- pending `LEVEL_1`
+- approved `LEVEL_2`
+- rejected `LEVEL_3`
+- cancelled `LEVEL_1`
+- pending `LEVEL_2`
+- pending `LEVEL_3`
+
+The corresponding `request_history` rows are also seeded.
+
+### Correct way to use the seeds
+
+Use the seeds when:
+
+- you want a working local environment immediately
+- you want known users for manual testing
+- you want ready-made requests in different workflow states
+
+Use this reset flow whenever you change the seed SQL or want to restore the original demo data:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+Do not expect changes in `database/init/*.sql` to apply automatically to an already initialized volume.
+
+## Authentication and User Management
+
+### Login
+
+`POST /auth/login` is the only public authentication endpoint.
+
+Example:
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@example.com",
+    "password": "Password@123"
+  }'
+```
+
+Successful response:
+
+```json
+{
+  "data": {
+    "token": "jwt-token",
+    "tokenType": "Bearer",
+    "user": {
+      "id": 1,
+      "name": "Initial Admin",
+      "email": "admin@example.com",
+      "role": "ADMIN",
+      "approvalLevel": "LEVEL_3"
+    }
+  }
+}
+```
+
+### Register a user
+
+`POST /auth/register` is implemented as an administrative user creation endpoint.
+
+- requires a valid JWT
+- requires `ADMIN` privileges
+- accepts `name`, `email`, `password`, `role`, and `approvalLevel`
+- returns the created user data
+- does not auto-login the created user
+
+Example creating a `SOLICITANTE`:
+
+```bash
+curl -X POST http://localhost:8080/auth/register \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Requester User",
+    "email": "requester3@example.com",
+    "password": "Requester@123",
+    "role": "SOLICITANTE",
+    "approvalLevel": "LEVEL_0"
+  }'
+```
+
+Example creating an `APROVADOR` level 2:
+
+```bash
+curl -X POST http://localhost:8080/auth/register \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type": "application/json" \
+  -d '{
+    "name": "Senior Approver",
+    "email": "approver3@example.com",
+    "password": "Approver@123",
+    "role": "APROVADOR",
+    "approvalLevel": "LEVEL_2"
+  }'
+```
+
+### Current user
+
+```bash
+curl http://localhost:8080/auth/me \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+### Update a user
+
+Administrative update endpoint:
+
+- `PATCH /users/{id}`
+
+It supports partial updates for:
+
+- `name`
+- `email`
+- `password`
+- `role`
+- `approvalLevel`
+
+## Purchase Request API
+
+### Endpoints
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `POST` | `/requests` | create a purchase request |
+| `GET` | `/requests` | list requests with optional `status` filter and pagination |
+| `GET` | `/requests/{id}` | get request details |
+| `PATCH` | `/requests/{id}/cancel` | cancel a request |
+| `PATCH` | `/requests/{id}/approve` | approve a request |
+| `PATCH` | `/requests/{id}/reject` | reject a request |
+| `GET` | `/requests/{id}/history` | list request history |
+
+### Create a request
+
+Example:
+
+```bash
+curl -X POST http://localhost:8080/requests \
+  -H "Authorization: Bearer <SOLICITANTE_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Purchase of notebooks",
+    "description": "Five notebooks for the engineering team",
+    "amount": 15000.00,
+    "category": "EQUIPMENT"
+  }'
+```
+
+### List requests
+
+Example with status filter and pagination:
+
+```bash
+curl "http://localhost:8080/requests?status=PENDING&page=0&size=5&sort=createdAt,desc" \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Behavior:
+
+- `SOLICITANTE` sees only own requests
+- `APROVADOR` and `ADMIN` see all requests
+
+### Detail a request
+
+```bash
+curl http://localhost:8080/requests/1 \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+### Cancel a request
+
+```bash
+curl -X PATCH http://localhost:8080/requests/1/cancel \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+Rules:
+
+- allowed for request owner when role is `SOLICITANTE`
+- allowed for `ADMIN`
+- only while request status is `PENDING`
+
+### Approve or reject a request
+
+Optional comment payload:
+
+```json
+{
+  "comment": "Approved after budget review"
+}
+```
+
+Approve:
+
+```bash
+curl -X PATCH http://localhost:8080/requests/1/approve \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "comment": "Approved after budget review"
+  }'
+```
+
+Reject:
+
+```bash
+curl -X PATCH http://localhost:8080/requests/1/reject \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "comment": "Rejected due to budget constraints"
+  }'
+```
+
+Approval compatibility:
+
+- `LEVEL_1`: any `APROVADOR` or `ADMIN`
+- `LEVEL_2`: `APROVADOR` level 2 or `ADMIN`
+- `LEVEL_3`: only `ADMIN`
+
+### Request history
+
+```bash
+curl http://localhost:8080/requests/1/history \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+The history stores:
+
+- action
+- actor
+- previous status
+- new status
+- optional comment
+- timestamp
+
+## API Response Contract
+
+### Success
+
+All successful operations return a standard envelope:
+
+```json
+{
+  "data": {}
+}
+```
+
+### Validation error
+
+Validation failures return `400` with a structured body:
+
+```json
+{
+  "timestamp": "2026-05-31T13:00:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "detail": "Validation failed",
+  "path": "/requests",
+  "errors": [
+    "amount must not be null"
+  ]
+}
+```
+
+### Unauthorized and forbidden
+
+- `401` when the request has no valid token
+- `403` when the authenticated user lacks permission
+
+### Invalid workflow action
+
+Workflow violations return `422` with a descriptive message, for example:
+
+```json
+{
+  "detail": "Cannot approve this request because it is already CANCELLED. Only pending requests can be approved."
+}
+```
+
+## Persistence Model
+
+The database schema is initialized from:
+
+```text
+database/init/01_schema.sql
+```
+
+Demo data is initialized from:
+
+```text
+database/init/02_seed.sql
+```
+
+Main tables:
+
+- `users`
+- `purchase_requests`
+- `request_history`
+
+Key implementation notes:
+
+- PostgreSQL enums are used for roles, approval levels, request status, and history actions
+- request concurrency is protected with optimistic locking via `@Version`
+- the application validates schema on startup with `spring.jpa.hibernate.ddl-auto=validate`
+- demo data is inserted during PostgreSQL initialization through `02_seed.sql`
 
 ## Running Tests
 
@@ -195,6 +535,8 @@ Application URLs:
 
 `PurchaseRequestRepositoryTests` currently point to the local PostgreSQL configured in `.env`.  
 That means these tests expect the database from `docker compose up -d --build` to be running before `./mvnw test`.
+
+Because the database is seeded on container initialization, the tests run against a database that already contains the demo users and requests unless you customize the seed flow.
 
 ## Useful Commands
 
@@ -222,18 +564,62 @@ Stop database:
 docker compose down
 ```
 
-Reset database volume:
+Reset database volume and reload schema plus seeds:
 
 ```bash
 docker compose down -v
 docker compose up -d --build
 ```
 
-## Notes About Challenge Alignment
+## Troubleshooting
+
+### `401` on protected endpoints even after login
+
+Check that:
+
+- the `Authorization` header uses `Bearer <token>`
+- the token is not expired
+- the token was generated with the current `JWT_SECRET`
+
+### `POST /auth/register` returns `401` or `403`
+
+That is expected unless you are authenticated as an `ADMIN`.
+
+### I changed the seeds but the data did not update
+
+The SQL scripts inside `database/init/` are applied only when the PostgreSQL volume is created.
+
+Recreate the volume to apply seed changes:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+### Database credentials changed but PostgreSQL still rejects login
+
+If the Docker volume was initialized with older credentials, recreate it:
+
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+### Port `5432` is already in use
+
+Stop the local process using that port or update the published port in `docker-compose.yml`.
+
+### `./mvnw test` fails on repository tests
+
+Confirm that:
+
+- Docker is running
+- `docker compose up -d --build` completed successfully
+- the PostgreSQL container is healthy
+- `.env` matches the database container credentials
 
 One intentional implementation detail is worth calling out:
 
 - user registration is not public in this backend
 - `/auth/register` is treated as an administrative provisioning endpoint
-
-That choice improves security for this codebase, but it means bootstrapping the first admin is a required local setup step.
+- demo users are provided through database seeds so the project is usable immediately after startup
