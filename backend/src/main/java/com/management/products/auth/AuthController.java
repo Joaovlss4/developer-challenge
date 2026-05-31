@@ -35,7 +35,7 @@ public class AuthController {
 	@PreAuthorize("hasAuthority(T(com.management.products.security.UserPermission).USER_MANAGE.authority())")
 	@SecurityRequirement(name = "bearerAuth")
 	@Operation(summary = "Register a new user")
-	public ApiSuccessResponse<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+	public ApiSuccessResponse<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
 		return ApiSuccessResponse.of(authService.register(request));
 	}
 

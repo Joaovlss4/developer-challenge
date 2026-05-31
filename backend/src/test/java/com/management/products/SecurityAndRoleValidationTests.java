@@ -119,11 +119,13 @@ class SecurityAndRoleValidationTests {
 					  "role": "APROVADOR",
 					  "approvalLevel": "LEVEL_2"
 					}
-					"""))
-			.andExpect(status().isCreated())
-			.andExpect(jsonPath("$.data.user.role").value("APROVADOR"))
-			.andExpect(jsonPath("$.data.user.approvalLevel").value("LEVEL_2"))
-			.andExpect(jsonPath("$.data.token").isString());
+						"""))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.data.role").value("APROVADOR"))
+				.andExpect(jsonPath("$.data.approvalLevel").value("LEVEL_2"))
+				.andExpect(jsonPath("$.data.token").doesNotExist())
+				.andExpect(jsonPath("$.data.tokenType").doesNotExist())
+				.andExpect(jsonPath("$.data.user").doesNotExist());
 
 		verify(userRepository).existsByEmail("new.user@example.com");
 	}

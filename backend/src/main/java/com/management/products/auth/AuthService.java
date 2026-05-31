@@ -43,7 +43,7 @@ public class AuthService {
 	}
 
 	@Transactional
-	public AuthResponse register(RegisterRequest request) {
+	public UserResponse register(RegisterRequest request) {
 		String email = normalizeEmail(request.email());
 		validateEmailAvailability(email);
 
@@ -56,9 +56,8 @@ public class AuthService {
 			approvalLevel
 		);
 
-		User savedUser = saveUser(user);
-		AuthUserDetails userDetails = new AuthUserDetails(savedUser);
-		return AuthResponse.bearer(jwtService.generateToken(userDetails), UserResponse.from(savedUser));
+			User savedUser = saveUser(user);
+			return UserResponse.from(savedUser);
 	}
 
 	@Transactional(readOnly = true)

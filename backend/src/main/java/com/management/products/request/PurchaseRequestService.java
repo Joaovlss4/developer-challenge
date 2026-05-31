@@ -92,7 +92,7 @@ public class PurchaseRequestService {
 		PurchaseRequest request = loadRequest(id);
 		User actor = currentUser.getUser();
 
-		ensureCanCancelRequest(request, actor);
+		ensureCanCancelRequest(request, currentUser);
 		ensurePending(request, "cancel");
 
 		request.markCancelled(actor, OffsetDateTime.now());
@@ -191,11 +191,12 @@ public class PurchaseRequestService {
 		throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have access to this request");
 	}
 
-	private void ensureCanCancelRequest(PurchaseRequest request, User actor) {
-		if (actor.getRole() == UserRole.ADMIN) {
+	private void ensureCanCancelRequest(PurchaseRequest request, AuthUserDetails currentUser) {
+		if (hasAuthority(currentUser, UserPermission.REQUEST_CANCEL_ANY)) {
 			return;
 		}
 
+		User actor = currentUser.getUser();
 		boolean isRequester = request.getRequester().getId().equals(actor.getId());
 		if (actor.getRole() == UserRole.SOLICITANTE && isRequester) {
 			return;
