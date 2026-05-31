@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,9 +25,11 @@ import com.management.products.user.ApprovalLevel;
 import com.management.products.user.User;
 import com.management.products.user.UserController;
 import com.management.products.user.UserRepository;
+import com.management.products.user.UserRole;
 import com.management.products.user.UserRolePolicy;
 import com.management.products.user.UserService;
 import java.lang.reflect.Field;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -154,6 +157,34 @@ class SecurityAndRoleValidationTests {
 	}
 
 	@Test
+	void listUsersWithoutAuthenticationReturns401() throws Exception {
+		mockMvc.perform(get("/users"))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	@WithMockUser(roles = "SOLICITANTE")
+	void listUsersWithNonAdminReturns403() throws Exception {
+		mockMvc.perform(get("/users"))
+			.andExpect(status().isForbidden());
+	}
+
+	@Test
+	@WithMockUser(authorities = "user:manage")
+	void listUsersWithAdminPermissionReturns200() throws Exception {
+		when(userRepository.findAll(any(org.springframework.data.domain.Sort.class))).thenReturn(List.of(
+			user(1L, "Admin User", "admin@example.com", UserRole.ADMIN, ApprovalLevel.LEVEL_3),
+			user(2L, "Requester User", "requester@example.com", UserRole.SOLICITANTE, ApprovalLevel.LEVEL_0)
+		));
+
+		mockMvc.perform(get("/users"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.length()").value(2))
+			.andExpect(jsonPath("$.data[0].email").value("admin@example.com"))
+			.andExpect(jsonPath("$.data[1].role").value("SOLICITANTE"));
+	}
+
+	@Test
 	void adminUserDetailsExposeRbacAuthorities() {
 		User admin = new User(
 			"Admin User",
@@ -178,5 +209,11 @@ class SecurityAndRoleValidationTests {
 		Field idField = User.class.getDeclaredField("id");
 		idField.setAccessible(true);
 		idField.set(user, id);
+	}
+
+	private User user(Long id, String name, String email, UserRole role, ApprovalLevel approvalLevel) throws Exception {
+		User user = new User(name, email, "encoded-password", role, approvalLevel);
+		setUserId(user, id);
+		return user;
 	}
 }

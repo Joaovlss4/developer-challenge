@@ -2,8 +2,9 @@ package com.management.products.user;
 
 import com.management.products.auth.dto.UserResponse;
 import com.management.products.user.dto.UpdateUserRequest;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import java.util.List;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,13 @@ public class UserService {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.userRolePolicy = userRolePolicy;
+	}
+
+	@Transactional(readOnly = true)
+	public List<UserResponse> listUsers() {
+		return userRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
+			.map(UserResponse::from)
+			.toList();
 	}
 
 	@Transactional
@@ -72,14 +80,6 @@ public class UserService {
 	private void validateEmailAvailability(String email) {
 		if (userRepository.existsByEmail(email)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail already registered");
-		}
-	}
-
-	private User saveUser(User user) {
-		try {
-			return userRepository.save(user);
-		} catch (DataIntegrityViolationException exception) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail already registered", exception);
 		}
 	}
 }
