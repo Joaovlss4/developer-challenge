@@ -231,9 +231,20 @@ Do not expect changes in `database/init/*.sql` to apply automatically to an alre
 
 ## Authentication and User Management
 
-### Login
+### Public routes
 
-`POST /auth/login` is the only public authentication endpoint.
+The public routes are:
+
+- `POST /auth/login`
+- Swagger UI
+- OpenAPI docs
+
+Public documentation URLs:
+
+- [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+### Login
 
 Example:
 
@@ -311,6 +322,19 @@ curl http://localhost:8080/auth/me \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
+### List users
+
+Administrative listing endpoint:
+
+- `GET /users`
+
+Example:
+
+```bash
+curl http://localhost:8080/users \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
 ### Update a user
 
 Administrative update endpoint:
@@ -324,6 +348,18 @@ It supports partial updates for:
 - `password`
 - `role`
 - `approvalLevel`
+
+Example:
+
+```bash
+curl -X PATCH http://localhost:8080/users/2 \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Approver",
+    "approvalLevel": "LEVEL_2"
+  }'
+```
 
 ## Purchase Request API
 
@@ -533,10 +569,18 @@ Key implementation notes:
 
 ### Important note about repository tests
 
-`PurchaseRequestRepositoryTests` currently point to the local PostgreSQL configured in `.env`.  
-That means these tests expect the database from `docker compose up -d --build` to be running before `./mvnw test`.
+`PurchaseRequestRepositoryTests` point to the local PostgreSQL configured by the backend Docker Compose setup.
 
-Because the database is seeded on container initialization, the tests run against a database that already contains the demo users and requests unless you customize the seed flow.
+That means these tests expect:
+
+- `docker compose up -d --build` to be running in `backend/`
+- the PostgreSQL container to be healthy
+- the default local credentials:
+  - database: `purchase_requests`
+  - username: `purchase_user`
+  - password: `purchase_password`
+
+Because the local database is initialized with schema and seeds, the repository tests run against that PostgreSQL instance instead of an in-memory database.
 
 ## Useful Commands
 
