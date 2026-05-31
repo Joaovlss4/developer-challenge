@@ -7,9 +7,11 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.management.products.auth.AuthUserDetailsService;
@@ -54,7 +56,8 @@ import org.springframework.web.server.ResponseStatusException;
 })
 @TestPropertySource(properties = {
 	"security.jwt.secret=change-me-to-a-strong-secret-with-at-least-32-chars",
-	"security.jwt.expiration-minutes=60"
+	"security.jwt.expiration-minutes=60",
+	"app.cors.allowed-origins=http://localhost:3000"
 })
 class PurchaseRequestControllerSecurityTests {
 
@@ -69,6 +72,17 @@ class PurchaseRequestControllerSecurityTests {
 
 	@MockitoBean
 	private com.management.products.user.UserRepository userRepository;
+
+	@Test
+	void loginPreflightRequestReturnsCorsHeaders() throws Exception {
+		mockMvc.perform(options("/auth/login")
+				.header("Origin", "http://localhost:3000")
+				.header("Access-Control-Request-Method", "POST")
+				.header("Access-Control-Request-Headers", "content-type"))
+			.andExpect(status().isOk())
+			.andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+			.andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+	}
 
 	@Test
 	void createRequestWithoutAuthenticationReturns401() throws Exception {
