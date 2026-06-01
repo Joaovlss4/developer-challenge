@@ -59,6 +59,7 @@ public final class SecurityAuthorities {
 
 	private static void addAdminAuthorities(Set<String> authorities) {
 		authorities.add(UserPermission.USER_MANAGE.authority());
+		authorities.add(UserPermission.REQUEST_CREATE.authority());
 		authorities.add(UserPermission.REQUEST_REVIEW.authority());
 		authorities.add(UserPermission.REQUEST_APPROVE_LEVEL_3.authority());
 		authorities.add(UserPermission.REQUEST_READ_ALL.authority());

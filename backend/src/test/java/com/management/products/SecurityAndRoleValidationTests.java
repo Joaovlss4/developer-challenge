@@ -200,6 +200,7 @@ class SecurityAndRoleValidationTests {
 			.extracting(authority -> authority.getAuthority())
 			.contains(
 				SecurityAuthorities.ROLE_ADMIN,
+				UserPermission.REQUEST_CREATE.authority(),
 				UserPermission.USER_MANAGE.authority(),
 				UserPermission.REQUEST_APPROVE_LEVEL_3.authority()
 			);

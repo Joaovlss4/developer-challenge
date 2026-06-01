@@ -101,8 +101,33 @@ class PurchaseRequestControllerSecurityTests {
 	}
 
 	@Test
-	@WithMockUser(roles = "ADMIN")
-	void createRequestWithAdminRoleReturns403() throws Exception {
+	@WithMockUser(authorities = {
+		"request:create",
+		"request:review",
+		"request:approve:level3",
+		"request:read:all",
+		"request:cancel:any",
+		"user:manage",
+		"ROLE_ADMIN"
+	})
+	void createRequestWithAdminRoleReturns201() throws Exception {
+		when(purchaseRequestService.createRequest(any(CreatePurchaseRequestRequest.class), any())).thenReturn(
+			new PurchaseRequestResponse(
+				1L,
+				"New laptops",
+				"Five laptops for engineering",
+				new BigDecimal("15000.00"),
+				"EQUIPMENT",
+				PurchaseRequestStatus.PENDING,
+				ApprovalLevel.LEVEL_3,
+				new RequestActorResponse(7L, "Requester", "requester@example.com"),
+				null,
+				null,
+				OffsetDateTime.now(),
+				OffsetDateTime.now()
+			)
+		);
+
 		mockMvc.perform(post("/requests")
 				.with(csrf())
 				.contentType("application/json")
@@ -114,7 +139,10 @@ class PurchaseRequestControllerSecurityTests {
 					  "category": "EQUIPMENT"
 					}
 					"""))
-			.andExpect(status().isForbidden());
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.data.id").value(1L))
+			.andExpect(jsonPath("$.data.status").value("PENDING"))
+			.andExpect(jsonPath("$.data.requiredApprovalLevel").value("LEVEL_3"));
 	}
 
 	@Test
