@@ -169,10 +169,41 @@ class PurchaseRequestServiceTests {
 
 		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
 
-		var response = purchaseRequestService.cancelRequest(20L, auth(requester));
+		var response = purchaseRequestService.cancelRequest(20L, null, auth(requester));
 
 		assertThat(response.status()).isEqualTo(PurchaseRequestStatus.CANCELLED);
 		assertThat(response.resolvedBy()).isNotNull();
+		assertSavedHistory(RequestAction.CANCELLED, PurchaseRequestStatus.PENDING, PurchaseRequestStatus.CANCELLED, null);
+	}
+
+	@Test
+	void cancelRequestStoresCommentWhenProvided() {
+		User requester = requester(10L);
+		PurchaseRequest request = purchaseRequest(20L, requester, PurchaseRequestStatus.PENDING, ApprovalLevel.LEVEL_1);
+
+		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
+
+		var response = purchaseRequestService.cancelRequest(20L, new RequestDecisionRequest("No longer needed"), auth(requester));
+
+		assertThat(response.status()).isEqualTo(PurchaseRequestStatus.CANCELLED);
+		assertSavedHistory(
+			RequestAction.CANCELLED,
+			PurchaseRequestStatus.PENDING,
+			PurchaseRequestStatus.CANCELLED,
+			"No longer needed"
+		);
+	}
+
+	@Test
+	void cancelRequestNormalizesBlankCommentToNull() {
+		User requester = requester(10L);
+		PurchaseRequest request = purchaseRequest(20L, requester, PurchaseRequestStatus.PENDING, ApprovalLevel.LEVEL_1);
+
+		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
+
+		var response = purchaseRequestService.cancelRequest(20L, new RequestDecisionRequest("   "), auth(requester));
+
+		assertThat(response.status()).isEqualTo(PurchaseRequestStatus.CANCELLED);
 		assertSavedHistory(RequestAction.CANCELLED, PurchaseRequestStatus.PENDING, PurchaseRequestStatus.CANCELLED, null);
 	}
 
@@ -183,7 +214,7 @@ class PurchaseRequestServiceTests {
 
 		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
 
-		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, auth(requester)))
+		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, null, auth(requester)))
 			.isInstanceOf(ResponseStatusException.class)
 			.satisfies(exception -> {
 				assertStatus(exception, HttpStatus.UNPROCESSABLE_ENTITY);
@@ -202,7 +233,7 @@ class PurchaseRequestServiceTests {
 
 		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
 
-		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, auth(otherRequester)))
+		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, null, auth(otherRequester)))
 			.isInstanceOf(ResponseStatusException.class)
 			.satisfies(exception -> assertStatus(exception, HttpStatus.FORBIDDEN));
 	}
@@ -215,7 +246,7 @@ class PurchaseRequestServiceTests {
 
 		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
 
-		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, auth(approver)))
+		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, null, auth(approver)))
 			.isInstanceOf(ResponseStatusException.class)
 			.satisfies(exception -> assertStatus(exception, HttpStatus.FORBIDDEN));
 	}
@@ -224,7 +255,7 @@ class PurchaseRequestServiceTests {
 	void cancelRequestReturns404WhenRequestDoesNotExist() {
 		when(purchaseRequestRepository.findWithUsersById(99L)).thenReturn(Optional.empty());
 
-		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(99L, auth(requester(10L))))
+		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(99L, null, auth(requester(10L))))
 			.isInstanceOf(ResponseStatusException.class)
 			.satisfies(exception -> {
 				assertStatus(exception, HttpStatus.NOT_FOUND);
@@ -514,7 +545,7 @@ class PurchaseRequestServiceTests {
 
 		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
 
-		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, auth(approver)))
+		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, null, auth(approver)))
 			.isInstanceOf(ResponseStatusException.class)
 			.satisfies(exception -> assertStatus(exception, HttpStatus.FORBIDDEN));
 	}
@@ -653,7 +684,7 @@ class PurchaseRequestServiceTests {
 
 		when(purchaseRequestRepository.findWithUsersById(20L)).thenReturn(Optional.of(request));
 
-		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, auth(admin)))
+		assertThatThrownBy(() -> purchaseRequestService.cancelRequest(20L, null, auth(admin)))
 			.isInstanceOf(ResponseStatusException.class)
 			.satisfies(exception -> assertStatus(exception, HttpStatus.UNPROCESSABLE_ENTITY));
 	}

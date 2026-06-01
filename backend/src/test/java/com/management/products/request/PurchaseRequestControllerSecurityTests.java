@@ -38,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
@@ -290,7 +291,7 @@ class PurchaseRequestControllerSecurityTests {
 	@Test
 	@WithMockUser(roles = "ADMIN")
 	void cancelRequestReturns200ForAuthorizedUser() throws Exception {
-		when(purchaseRequestService.cancelRequest(eq(1L), any())).thenReturn(
+		when(purchaseRequestService.cancelRequest(eq(1L), any(RequestDecisionRequest.class), any())).thenReturn(
 			new PurchaseRequestResponse(
 				1L,
 				"New laptops",
@@ -307,7 +308,14 @@ class PurchaseRequestControllerSecurityTests {
 			)
 		);
 
-		mockMvc.perform(patch("/requests/1/cancel").with(csrf()))
+		mockMvc.perform(patch("/requests/1/cancel")
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "comment": "cancelled by requester"
+					}
+					"""))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.status").value("CANCELLED"));
 	}
@@ -321,13 +329,20 @@ class PurchaseRequestControllerSecurityTests {
 	@Test
 	@WithMockUser(roles = "SOLICITANTE")
 	void cancelRequestReturns422WithDescriptiveMessageForInvalidState() throws Exception {
-		when(purchaseRequestService.cancelRequest(eq(1L), any()))
+		when(purchaseRequestService.cancelRequest(eq(1L), any(RequestDecisionRequest.class), any()))
 			.thenThrow(new ResponseStatusException(
 				org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY,
 				"Cannot cancel this request because it is already APPROVED. Only pending requests can be cancelled."
 			));
 
-		mockMvc.perform(patch("/requests/1/cancel").with(csrf()))
+		mockMvc.perform(patch("/requests/1/cancel")
+				.with(csrf())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "comment": "cancelled"
+					}
+					"""))
 			.andExpect(status().isUnprocessableEntity())
 			.andExpect(jsonPath("$.detail").value("Cannot cancel this request because it is already APPROVED. Only pending requests can be cancelled."))
 			.andExpect(jsonPath("$.path").value("/requests/1/cancel"));

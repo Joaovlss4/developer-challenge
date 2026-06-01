@@ -88,7 +88,7 @@ public class PurchaseRequestService {
 	}
 
 	@Transactional
-	public PurchaseRequestResponse cancelRequest(Long id, AuthUserDetails currentUser) {
+	public PurchaseRequestResponse cancelRequest(Long id, RequestDecisionRequest requestDecision, AuthUserDetails currentUser) {
 		PurchaseRequest request = loadRequest(id);
 		User actor = currentUser.getUser();
 
@@ -102,7 +102,7 @@ public class PurchaseRequestService {
 			RequestAction.CANCELLED,
 			PurchaseRequestStatus.PENDING,
 			PurchaseRequestStatus.CANCELLED,
-			null
+			normalizeComment(requestDecision == null ? null : requestDecision.comment())
 		));
 
 		return PurchaseRequestResponse.from(request);

@@ -73,9 +73,10 @@ public class PurchaseRequestController {
 	@Operation(summary = "Cancel a purchase request")
 	public ApiSuccessResponse<PurchaseRequestResponse> cancelRequest(
 		@PathVariable Long id,
+		@Valid @RequestBody(required = false) RequestDecisionRequest request,
 		@AuthenticationPrincipal AuthUserDetails currentUser
 	) {
-		return ApiSuccessResponse.of(purchaseRequestService.cancelRequest(id, currentUser));
+		return ApiSuccessResponse.of(purchaseRequestService.cancelRequest(id, request, currentUser));
 	}
 
 	@PatchMapping("/{id}/approve")
