@@ -42,8 +42,9 @@ export function CreateUserPageClient({
     dismissLogoutError,
     error: sessionError,
     isAuthenticated,
-    isPending,
+    isLoggingOut,
     logoutError,
+    logout,
     retrySession,
     session,
     status,
@@ -106,10 +107,10 @@ export function CreateUserPageClient({
   return (
     <>
       <AppShell
-        isLoggingOut={isPending}
+        isLoggingOut={isLoggingOut}
         logoutError={logoutError}
         onDismissLogoutError={dismissLogoutError}
-        onLogout={clearSession}
+        onLogout={logout}
         subtitle="Preencha os dados do novo usuário respeitando as regras de perfil e nível de aprovação."
         title="Novo usuário"
         user={session.user}

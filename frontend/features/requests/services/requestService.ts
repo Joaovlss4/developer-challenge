@@ -5,6 +5,7 @@ import type {
   PageResponse,
   PurchaseRequestPageResponse,
   PurchaseRequestDetails,
+  RequestDecisionPayload,
   RequestHistoryEntry,
   RequestHistoryResponse,
   PurchaseRequestResponse,
@@ -120,31 +121,43 @@ export const requestService = {
         new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
     );
   },
-  async cancelRequest(id: number): Promise<PurchaseRequestDetails> {
+  async cancelRequest(
+    id: number,
+    payload?: RequestDecisionPayload,
+  ): Promise<PurchaseRequestDetails> {
     const response = await apiRequest<PurchaseRequestResponse>(
       `/api/requests/${id}/cancel`,
       {
         method: "PATCH",
+        body: payload,
       },
     );
 
     return response.data;
   },
-  async approveRequest(id: number): Promise<PurchaseRequestDetails> {
+  async approveRequest(
+    id: number,
+    payload?: RequestDecisionPayload,
+  ): Promise<PurchaseRequestDetails> {
     const response = await apiRequest<PurchaseRequestResponse>(
       `/api/requests/${id}/approve`,
       {
         method: "PATCH",
+        body: payload,
       },
     );
 
     return response.data;
   },
-  async rejectRequest(id: number): Promise<PurchaseRequestDetails> {
+  async rejectRequest(
+    id: number,
+    payload?: RequestDecisionPayload,
+  ): Promise<PurchaseRequestDetails> {
     const response = await apiRequest<PurchaseRequestResponse>(
       `/api/requests/${id}/reject`,
       {
         method: "PATCH",
+        body: payload,
       },
     );
 

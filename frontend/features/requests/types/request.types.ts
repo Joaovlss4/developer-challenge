@@ -50,6 +50,10 @@ export interface CreatePurchaseRequestPayload {
   category: string;
 }
 
+export interface RequestDecisionPayload {
+  comment?: string;
+}
+
 export type RequestAction =
   | "CREATED"
   | "APPROVED"

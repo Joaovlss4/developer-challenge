@@ -77,6 +77,7 @@ export function useStoredSession(initialSession?: AuthSession | null) {
     createInitialState,
   );
   const [isPending, startTransition] = useTransition();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const retrySession = useCallback(() => {
@@ -237,6 +238,43 @@ export function useStoredSession(initialSession?: AuthSession | null) {
     });
   }
 
+  async function logout() {
+    setLogoutError(null);
+    setIsLoggingOut(true);
+
+    try {
+      await authService.logout();
+
+      startTransition(() => {
+        dispatch({
+          type: "clear",
+        });
+      });
+
+      return true;
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        startTransition(() => {
+          dispatch({
+            type: "clear",
+          });
+        });
+
+        return true;
+      }
+
+      setLogoutError(
+        error instanceof ApiError
+          ? error.message
+          : "Não foi possível encerrar sua sessão no servidor. Tente novamente.",
+      );
+
+      return false;
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
+
   function dismissLogoutError() {
     setLogoutError(null);
   }
@@ -247,11 +285,13 @@ export function useStoredSession(initialSession?: AuthSession | null) {
     session,
     status,
     logoutError,
+    isLoggingOut,
     isPending,
     isAuthenticated,
     retrySession,
     persistSession,
     clearSession,
+    logout,
     dismissLogoutError,
   };
 }

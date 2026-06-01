@@ -22,9 +22,10 @@ export function DashboardPageClient({
     dismissLogoutError,
     error: sessionError,
     isAuthenticated,
-    isPending,
+    isLoggingOut,
     retrySession,
     logoutError,
+    logout,
     session,
     status,
   } = useAuthenticatedSession(initialSession);
@@ -55,10 +56,10 @@ export function DashboardPageClient({
 
   return (
     <AppShell
-      isLoggingOut={isPending}
+      isLoggingOut={isLoggingOut}
       logoutError={logoutError}
       onDismissLogoutError={dismissLogoutError}
-      onLogout={clearSession}
+      onLogout={logout}
       subtitle="Resumo inicial das solicitações por status para acompanhar o fluxo de compras."
       title="Dashboard"
       user={session.user}

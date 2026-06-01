@@ -98,9 +98,10 @@ export function RequestsPageClient({
     clearSession,
     dismissLogoutError,
     error: sessionError,
-    isPending,
+    isLoggingOut,
     isAuthenticated,
     logoutError,
+    logout,
     retrySession,
     session,
     status,
@@ -159,10 +160,10 @@ export function RequestsPageClient({
   return (
     <>
       <AppShell
-        isLoggingOut={isPending}
+        isLoggingOut={isLoggingOut}
         logoutError={logoutError}
         onDismissLogoutError={dismissLogoutError}
-        onLogout={clearSession}
+        onLogout={logout}
         subtitle="Lista organizada das solicitações retornadas pelo backend conforme as permissões do usuário autenticado."
         title="Solicitações"
         user={session.user}

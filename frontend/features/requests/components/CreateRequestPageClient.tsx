@@ -65,8 +65,9 @@ export function CreateRequestPageClient({
     dismissLogoutError,
     error: sessionError,
     isAuthenticated,
-    isPending,
+    isLoggingOut,
     logoutError,
+    logout,
     retrySession,
     session,
     status,
@@ -135,10 +136,10 @@ export function CreateRequestPageClient({
 
   return (
     <AppShell
-      isLoggingOut={isPending}
+      isLoggingOut={isLoggingOut}
       logoutError={logoutError}
       onDismissLogoutError={dismissLogoutError}
-      onLogout={clearSession}
+      onLogout={logout}
       subtitle="Preencha os dados da compra para registrar uma nova solicitação no fluxo de aprovação."
       title="Nova solicitação"
       user={session.user}

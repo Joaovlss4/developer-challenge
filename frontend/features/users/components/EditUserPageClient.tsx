@@ -45,8 +45,9 @@ export function EditUserPageClient({
     dismissLogoutError,
     error: sessionError,
     isAuthenticated,
-    isPending,
+    isLoggingOut,
     logoutError,
+    logout,
     retrySession,
     session,
     status,
@@ -139,10 +140,10 @@ export function EditUserPageClient({
   return (
     <>
       <AppShell
-        isLoggingOut={isPending}
+        isLoggingOut={isLoggingOut}
         logoutError={logoutError}
         onDismissLogoutError={dismissLogoutError}
-        onLogout={clearSession}
+        onLogout={logout}
         subtitle="Atualize nome, e-mail, senha, perfil e nível de aprovação do usuário."
         title="Editar usuário"
         user={session.user}

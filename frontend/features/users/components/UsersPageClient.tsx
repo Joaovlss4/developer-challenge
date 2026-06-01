@@ -75,8 +75,9 @@ export function UsersPageClient({
     dismissLogoutError,
     error: sessionError,
     isAuthenticated,
-    isPending,
+    isLoggingOut,
     logoutError,
+    logout,
     retrySession,
     session,
     status,
@@ -144,10 +145,10 @@ export function UsersPageClient({
   return (
     <>
       <AppShell
-        isLoggingOut={isPending}
+        isLoggingOut={isLoggingOut}
         logoutError={logoutError}
         onDismissLogoutError={dismissLogoutError}
-        onLogout={clearSession}
+        onLogout={logout}
         subtitle="Gestão administrativa de usuários, perfis e níveis de aprovação."
         title="Usuários"
         user={session.user}

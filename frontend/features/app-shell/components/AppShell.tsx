@@ -31,7 +31,7 @@ type AppShellProps = {
   logoutError?: string | null;
   onDismissLogoutError?: () => void;
   isLoggingOut: boolean;
-  onLogout: () => void;
+  onLogout: () => Promise<boolean> | boolean;
   title: string;
   subtitle: string;
   user: AuthenticatedUser;
@@ -162,9 +162,15 @@ export function AppShell({
               <Button
                 variant="outlined"
                 startIcon={<LogoutRoundedIcon />}
-                onClick={() => {
-                  onLogout();
+                onClick={async () => {
+                  const shouldRedirect = await onLogout();
+
+                  if (shouldRedirect === false) {
+                    return;
+                  }
+
                   router.replace("/login");
+                  router.refresh();
                 }}
                 disabled={isLoggingOut}
                 sx={{ borderRadius: 1 }}

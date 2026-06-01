@@ -26,6 +26,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
 import { AppShell } from "@/features/app-shell/components/AppShell";
@@ -37,8 +38,12 @@ import {
 import type { AuthSession } from "@/features/auth/types/auth.types";
 import { useRequestDetails } from "@/features/requests/hooks/useRequestDetails";
 import { useRequestHistory } from "@/features/requests/hooks/useRequestHistory";
+import { requestDecisionSchema } from "@/features/requests/schemas/requestDecision.schema";
 import { requestService } from "@/features/requests/services/requestService";
-import type { PurchaseRequestDetails } from "@/features/requests/types/request.types";
+import type {
+  PurchaseRequestDetails,
+  RequestDecisionPayload,
+} from "@/features/requests/types/request.types";
 import {
   canCancelPurchaseRequest,
   canReviewPurchaseRequest,
@@ -101,8 +106,9 @@ export function RequestDetailsPageClient({
     dismissLogoutError,
     error: sessionError,
     isAuthenticated,
-    isPending: isLoggingOut,
+    isLoggingOut,
     logoutError,
+    logout,
     retrySession,
     session,
     status,
@@ -123,6 +129,8 @@ export function RequestDetailsPageClient({
   const [toast, setToast] = useState<ToastState | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
+  const [actionComment, setActionComment] = useState("");
+  const [actionCommentError, setActionCommentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "authenticated" && errorStatus === 401) {
@@ -171,33 +179,51 @@ export function RequestDetailsPageClient({
   }
 
   async function handleConfirmAction(action: Exclude<PendingAction, null>) {
+    const parsedPayload = requestDecisionSchema.safeParse({
+      comment: actionComment,
+    });
+
+    if (!parsedPayload.success) {
+      setActionCommentError(
+        parsedPayload.error.issues[0]?.message ??
+          "Verifique o comentário informado.",
+      );
+      return;
+    }
+
     setIsSubmittingAction(true);
-    await performAction(action);
+    await performAction(action, parsedPayload.data);
     setIsSubmittingAction(false);
   }
 
-  async function performAction(action: Exclude<PendingAction, null>) {
+  async function performAction(
+    action: Exclude<PendingAction, null>,
+    payload: RequestDecisionPayload,
+  ) {
     try {
       let updatedRequest: PurchaseRequestDetails;
 
       switch (action) {
         case "approve":
-          updatedRequest = await requestService.approveRequest(requestId);
+          updatedRequest = await requestService.approveRequest(requestId, payload);
           break;
         case "cancel":
-          updatedRequest = await requestService.cancelRequest(requestId);
+          updatedRequest = await requestService.cancelRequest(requestId, payload);
           break;
         case "reject":
-          updatedRequest = await requestService.rejectRequest(requestId);
+          updatedRequest = await requestService.rejectRequest(requestId, payload);
           break;
       }
 
       updateRequest(updatedRequest);
       setPendingAction(null);
+      setActionComment("");
+      setActionCommentError(null);
       setToast({
         message: ACTION_COPY[action].successMessage,
         severity: "success",
       });
+      router.refresh();
     } catch (error) {
       const message =
         error instanceof ApiError
@@ -222,7 +248,7 @@ export function RequestDetailsPageClient({
         isLoggingOut={isLoggingOut}
         logoutError={logoutError}
         onDismissLogoutError={dismissLogoutError}
-        onLogout={clearSession}
+        onLogout={logout}
         subtitle="Consulte o status atual da solicitação e execute ações permitidas pelo seu perfil."
         title="Detalhes da solicitação"
         user={session.user}
@@ -380,7 +406,11 @@ export function RequestDetailsPageClient({
                             <CheckCircleRoundedIcon />
                           )
                         }
-                        onClick={() => setPendingAction("approve")}
+                        onClick={() => {
+                          setPendingAction("approve");
+                          setActionComment("");
+                          setActionCommentError(null);
+                        }}
                         disabled={isSubmittingAction || pendingAction !== null}
                         sx={{ borderRadius: 1 }}
                       >
@@ -401,7 +431,11 @@ export function RequestDetailsPageClient({
                             <CloseRoundedIcon />
                           )
                         }
-                        onClick={() => setPendingAction("reject")}
+                        onClick={() => {
+                          setPendingAction("reject");
+                          setActionComment("");
+                          setActionCommentError(null);
+                        }}
                         disabled={isSubmittingAction || pendingAction !== null}
                         sx={{ borderRadius: 1 }}
                       >
@@ -422,7 +456,11 @@ export function RequestDetailsPageClient({
                             <BlockRoundedIcon />
                           )
                         }
-                        onClick={() => setPendingAction("cancel")}
+                        onClick={() => {
+                          setPendingAction("cancel");
+                          setActionComment("");
+                          setActionCommentError(null);
+                        }}
                         disabled={isSubmittingAction || pendingAction !== null}
                         sx={{ borderRadius: 1 }}
                       >
@@ -513,7 +551,15 @@ export function RequestDetailsPageClient({
 
       <Dialog
         open={pendingAction !== null}
-        onClose={isSubmittingAction ? undefined : () => setPendingAction(null)}
+        onClose={
+          isSubmittingAction
+            ? undefined
+            : () => {
+                setPendingAction(null);
+                setActionComment("");
+                setActionCommentError(null);
+              }
+        }
         fullWidth
         maxWidth="xs"
       >
@@ -521,13 +567,36 @@ export function RequestDetailsPageClient({
           {pendingAction ? ACTION_COPY[pendingAction].title : ""}
         </DialogTitle>
         <DialogContent>
-          <Typography color="text.secondary">
-            {pendingAction ? ACTION_COPY[pendingAction].description : ""}
-          </Typography>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              {pendingAction ? ACTION_COPY[pendingAction].description : ""}
+            </Typography>
+            <TextField
+              label="Comentário"
+              placeholder="Adicione um comentário para esta ação"
+              value={actionComment}
+              onChange={(event) => {
+                setActionComment(event.target.value);
+                if (actionCommentError) {
+                  setActionCommentError(null);
+                }
+              }}
+              error={Boolean(actionCommentError)}
+              helperText={actionCommentError ?? "Opcional. Máximo de 2000 caracteres."}
+              multiline
+              minRows={3}
+              fullWidth
+              disabled={isSubmittingAction}
+            />
+          </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button
-            onClick={() => setPendingAction(null)}
+            onClick={() => {
+              setPendingAction(null);
+              setActionComment("");
+              setActionCommentError(null);
+            }}
             disabled={isSubmittingAction}
             sx={{ borderRadius: 1 }}
           >
